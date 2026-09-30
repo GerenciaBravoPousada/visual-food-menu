@@ -1145,7 +1145,6 @@ ${o}`}function To(){let e=uo();if(!e)return`<div class="empty">Nenhuma empresa v
         <h3>${$(r.name)}</h3>
         ${c.length?`<p class="combo-includes">${c.map($).join(` + `)}</p>`:s}
         <div class="combo-price-strip">
-          ${u?`<span>De: <s>${X(u)}</s></span>`:``}
           <strong>por ${X(t.price)}</strong>
         </div>
         <div class="product-bottom-row combo-bottom-row">
