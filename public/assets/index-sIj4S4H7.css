@@ -48,3 +48,12 @@ input[name="comboOriginalPrice"]::-webkit-outer-spin-button,input[name="comboOri
 .admin-data-row.is-editing-category {
   cursor: default;
 }
+
+.admin-data-row.category-item.drag-over-above {
+  border-top: 3px solid #ea580c !important;
+  background: #fff7ed !important;
+}
+.admin-data-row.category-item.drag-over-below {
+  border-bottom: 3px solid #ea580c !important;
+  background: #fff7ed !important;
+}
