@@ -30,6 +30,11 @@ export type Additional = {
   active: boolean;
   icon?: string;
   icon_url?: string;
+  translations?: {
+    pt?: string;
+    en?: string;
+    es?: string;
+  };
 };
 
 export type Product = {
