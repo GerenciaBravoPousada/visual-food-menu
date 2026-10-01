@@ -163,9 +163,16 @@ export async function fetchCompanies() {
   const { data } = await supabase
     .from("companies")
     .select(COMPANY_PUBLIC_COLS)
-    .order("sort_order");
+    .order("name", { ascending: true });
 
-  return (data ?? []) as PublicCompany[];
+  const list = (data ?? []) as PublicCompany[];
+  return list.sort((a, b) =>
+    (a.fantasy_name || (a as Record<string, any>).name || "").localeCompare(
+      b.fantasy_name || (b as Record<string, any>).name || "",
+      "pt-BR",
+      { sensitivity: "base" }
+    )
+  );
 }
 
 export async function fetchPrimaryCompany() {

@@ -1,5 +1,5 @@
 import { useNavigate, Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AdditionalsTab } from "./AdditionalsTab";
 import { CategoriesTab } from "./CategoriesTab";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -72,7 +72,19 @@ export function AdminPanel() {
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ["menu"], queryFn: fetchMenu });
   const listCompanies = listCompaniesAdmin;
-  const { data: companies } = useQuery({ queryKey: ["companies"], queryFn: () => listCompanies() as Promise<Company[]> });
+  const { data: companies } = useQuery({
+    queryKey: ["companies"],
+    queryFn: async () => {
+      const res = (await listCompanies()) as Company[];
+      return (res ?? []).sort((a, b) =>
+        (a.fantasy_name || (a as any).name || "").localeCompare(
+          b.fantasy_name || (b as any).name || "",
+          "pt-BR",
+          { sensitivity: "base" }
+        )
+      );
+    },
+  });
   const { data: theme } = useQuery({ queryKey: ["theme"], queryFn: fetchTheme });
   const [activeTab, setActiveTab] = useState("categories");
 
@@ -974,6 +986,16 @@ function CompaniesTab({ companies, onChange }: { companies: Company[]; onChange:
   const [editing, setEditing] = useState<Partial<Company> | null>(null);
   const del = deleteCompany;
 
+  const sortedCompanies = useMemo(() => {
+    return [...companies].sort((a: Company, b: Company) =>
+      (a.fantasy_name || (a as any).name || "").localeCompare(
+        b.fantasy_name || (b as any).name || "",
+        "pt-BR",
+        { sensitivity: "base" }
+      )
+    );
+  }, [companies]);
+
   return (
     <div>
       <div className="mb-4 flex justify-end">
@@ -997,7 +1019,7 @@ function CompaniesTab({ companies, onChange }: { companies: Company[]; onChange:
         </Button>
       </div>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        {companies.map((c) => (
+        {sortedCompanies.map((c: Company) => (
           <div
             key={c.id}
             className="flex gap-3 rounded-xl border border-border bg-card p-3 shadow-sm"
