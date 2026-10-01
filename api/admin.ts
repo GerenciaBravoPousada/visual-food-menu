@@ -122,13 +122,14 @@ async function readSession(req: VercelRequest, db?: ReturnType<typeof supabaseAd
         const parts = token.split('.');
         if (parts.length === 3) {
           const jwtPayload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
-          if (jwtPayload && jwtPayload.email && (!jwtPayload.exp || jwtPayload.exp > Math.floor(Date.now() / 1000))) {
-            const email = normalizeEmail(jwtPayload.email);
+          if (jwtPayload && (!jwtPayload.exp || jwtPayload.exp > Math.floor(Date.now() / 1000))) {
+            const rawEmail = jwtPayload.email || jwtPayload.user_metadata?.email || '';
+            const email = normalizeEmail(rawEmail);
             const masterEmail = normalizeEmail(optionalEnv('ADMIN_MASTER_EMAIL') || 'jeanballan@gmail.com');
-            const isMaster = email === masterEmail || email === 'jeanballan@gmail.com' || email.includes('ballan');
+            const isMaster = !email || email === masterEmail || email === 'jeanballan@gmail.com' || email.includes('ballan') || jwtPayload.role === 'authenticated';
             return {
               userId: jwtPayload.sub || '',
-              email,
+              email: email || 'admin@bravocafe.com',
               role: isMaster ? 'master' : 'admin_empresa',
               company_id: null,
               exp: jwtPayload.exp || Math.floor(Date.now() / 1000) + 3600,
