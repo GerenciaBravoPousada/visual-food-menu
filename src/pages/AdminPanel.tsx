@@ -74,6 +74,7 @@ export function AdminPanel() {
   const listCompanies = listCompaniesAdmin;
   const { data: companies } = useQuery({ queryKey: ["companies"], queryFn: () => listCompanies() as Promise<Company[]> });
   const { data: theme } = useQuery({ queryKey: ["theme"], queryFn: fetchTheme });
+  const [activeTab, setActiveTab] = useState("categories");
 
   useEffect(() => {
     check().then((r) => {
@@ -88,83 +89,217 @@ export function AdminPanel() {
     qc.invalidateQueries({ queryKey: ["primary-company"] });
   };
 
+  const navItemClass = (tab: string) =>
+    `w-full flex items-center gap-2 rounded-md px-3 py-2 text-sm text-left transition-colors cursor-pointer ${
+      activeTab === tab
+        ? "bg-stone-800 text-white font-semibold"
+        : "text-stone-400 hover:bg-stone-800/60 hover:text-stone-200"
+    }`;
+
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-3">
+    <div className="min-h-screen bg-stone-100 flex text-stone-900">
+      {/* Left Sidebar Toolbar */}
+      <aside className="w-64 bg-[#1d1b18] text-white p-5 flex flex-col justify-between shrink-0 min-h-screen border-r border-stone-800">
+        <div className="space-y-6">
+          <div className="flex items-center gap-3 pb-3 border-b border-white/10">
             <LogoAvatar companies={companies ?? []} onChange={refresh} />
-            <h1 className="font-serif text-xl font-bold">Bravo Café — Admin</h1>
+            <div>
+              <strong className="block text-base font-semibold leading-tight text-white">Visual Food Menu</strong>
+              <span className="text-xs text-stone-400">Área administrativa</span>
+            </div>
+          </div>
+
+          <nav className="space-y-5">
+            {/* Cardápio */}
+            <div>
+              <div className="px-2 text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-1">
+                Cardápio
+              </div>
+              <div className="space-y-0.5">
+                <button type="button" onClick={() => setActiveTab("categories")} className={navItemClass("categories")}>
+                  <span className="text-xs text-stone-500 font-bold">&gt;</span> Categorias
+                </button>
+                <button type="button" onClick={() => setActiveTab("products")} className={navItemClass("products")}>
+                  <span className="text-xs text-stone-500 font-bold">&gt;</span> Produtos
+                </button>
+                <button type="button" onClick={() => setActiveTab("additionals")} className={navItemClass("additionals")}>
+                  <span className="text-xs text-stone-500 font-bold">&gt;</span> Adicionais
+                </button>
+                <button type="button" onClick={() => setActiveTab("markers")} className={navItemClass("markers")}>
+                  <span className="text-xs text-stone-500 font-bold">&gt;</span> Marcadores
+                </button>
+                <button type="button" onClick={() => setActiveTab("qr")} className={navItemClass("qr")}>
+                  <span className="text-xs text-stone-500 font-bold">&gt;</span> QR Code
+                </button>
+              </div>
+            </div>
+
+            {/* Fichas Técnicas */}
+            <div>
+              <div className="px-2 text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-1">
+                Fichas Técnicas
+              </div>
+              <div className="space-y-0.5">
+                <button type="button" onClick={() => setActiveTab("tech_dashboard")} className={navItemClass("tech_dashboard")}>
+                  <span className="text-xs text-stone-500 font-bold">&gt;</span> Dashboard
+                </button>
+                <button type="button" onClick={() => setActiveTab("tech_inputs")} className={navItemClass("tech_inputs")}>
+                  <span className="text-xs text-stone-500 font-bold">&gt;</span> Insumos
+                </button>
+                <button type="button" onClick={() => setActiveTab("tech_preparations")} className={navItemClass("tech_preparations")}>
+                  <span className="text-xs text-stone-500 font-bold">&gt;</span> Preparos
+                </button>
+                <button type="button" onClick={() => setActiveTab("tech_products")} className={navItemClass("tech_products")}>
+                  <span className="text-xs text-stone-500 font-bold">&gt;</span> Produtos finais
+                </button>
+              </div>
+            </div>
+
+            {/* Configurações */}
+            <div>
+              <div className="px-2 text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-1">
+                Configurações
+              </div>
+              <div className="space-y-0.5">
+                <button type="button" onClick={() => setActiveTab("companies")} className={navItemClass("companies")}>
+                  <span className="text-xs text-stone-500 font-bold">&gt;</span> Empresa
+                </button>
+                <button type="button" onClick={() => setActiveTab("theme")} className={navItemClass("theme")}>
+                  <span className="text-xs text-stone-500 font-bold">&gt;</span> Cores
+                </button>
+                <button type="button" onClick={() => setActiveTab("profile")} className={navItemClass("profile")}>
+                  <span className="text-xs text-stone-500 font-bold">&gt;</span> Minha conta
+                </button>
+                <button type="button" onClick={() => setActiveTab("users")} className={navItemClass("users")}>
+                  <span className="text-xs text-stone-500 font-bold">&gt;</span> Usuários
+                </button>
+              </div>
+            </div>
+          </nav>
+        </div>
+
+        <div className="pt-4 border-t border-white/10">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start text-stone-300 hover:text-white hover:bg-stone-800/80"
+            onClick={async () => {
+              await logout();
+              navigate("/admin");
+            }}
+          >
+            <LogOut className="mr-2 h-4 w-4" /> Sair
+          </Button>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <header className="sticky top-0 z-20 border-b border-stone-200 bg-white/90 backdrop-blur px-6 py-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-bold text-stone-900">
+              {activeTab === "categories" && "Cardápio — Categorias"}
+              {activeTab === "products" && "Cardápio — Produtos"}
+              {activeTab === "additionals" && "Cardápio — Adicionais"}
+              {activeTab === "markers" && "Cardápio — Marcadores"}
+              {activeTab === "qr" && "Cardápio — QR Code"}
+              {activeTab === "tech_dashboard" && "Fichas Técnicas — Dashboard"}
+              {activeTab === "tech_inputs" && "Fichas Técnicas — Insumos"}
+              {activeTab === "tech_preparations" && "Fichas Técnicas — Preparos"}
+              {activeTab === "tech_products" && "Fichas Técnicas — Produtos finais"}
+              {activeTab === "companies" && "Configurações — Empresa"}
+              {activeTab === "theme" && "Configurações — Cores"}
+              {activeTab === "profile" && "Configurações — Minha conta"}
+              {activeTab === "users" && "Configurações — Usuários"}
+            </h1>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" asChild>
+            <Button variant="outline" size="sm" asChild>
               <Link to="/">Ver cardápio</Link>
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={async () => {
-                await logout();
-                navigate("/admin");
-              }}
-            >
-              <LogOut className="mr-1 h-4 w-4" /> Sair
-            </Button>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-8">
-        {isLoading ? (
-          <p className="py-20 text-center text-muted-foreground">Carregando…</p>
-        ) : (
-          <Tabs defaultValue="products">
-            <TabsList className="flex-wrap">
-              <TabsTrigger value="categories">Categorias</TabsTrigger>
-              <TabsTrigger value="products">Produtos</TabsTrigger>
-              <TabsTrigger value="additionals">Adicionais</TabsTrigger>
-              <TabsTrigger value="markers">Marcadores</TabsTrigger>
-              <TabsTrigger value="theme">Cores</TabsTrigger>
-              <TabsTrigger value="tech_sheet">Ficha Técnica</TabsTrigger>
-              <TabsTrigger value="companies">Empresas</TabsTrigger>
-              <TabsTrigger value="users">Usuários</TabsTrigger>
-            </TabsList>
-            <TabsContent value="categories" className="mt-6">
-              <CategoriesTab categories={data?.categories ?? []} onChange={refresh} />
-            </TabsContent>
-            <TabsContent value="products" className="mt-6">
-              <ProductsTab
-                products={data?.products ?? []}
-                categories={data?.categories ?? []}
-                markers={data?.markers ?? []}
-                onChange={refresh}
-              />
-            </TabsContent>
-            <TabsContent value="additionals" className="mt-6">
-              <AdditionalsTab products={data?.products ?? []} onChange={refresh} />
-            </TabsContent>
-            <TabsContent value="markers" className="mt-6">
-              <MarkersTab markers={data?.markers ?? []} onChange={refresh} />
-            </TabsContent>
-            <TabsContent value="theme" className="mt-6">
-              <ThemeTab theme={theme} onChange={refresh} />
-            </TabsContent>
-            <TabsContent value="tech_sheet" className="mt-6">
-              <div className="rounded-lg border p-6 text-center text-muted-foreground">
-                Ficha Técnica em gestão operacional.
-              </div>
-            </TabsContent>
-            <TabsContent value="companies" className="mt-6">
-              <CompaniesTab companies={companies ?? []} onChange={refresh} />
-            </TabsContent>
-            <TabsContent value="users" className="mt-6">
-              <div className="rounded-lg border p-6 text-center text-muted-foreground">
-                Gerenciamento de Usuários atrelado às Empresas.
-              </div>
-            </TabsContent>
-          </Tabs>
-        )}
-      </main>
+        <main className="p-6 flex-1 overflow-auto max-w-7xl w-full">
+          {isLoading ? (
+            <p className="py-20 text-center text-muted-foreground">Carregando…</p>
+          ) : (
+            <div>
+              {activeTab === "categories" && (
+                <CategoriesTab categories={data?.categories ?? []} onChange={refresh} />
+              )}
+              {activeTab === "products" && (
+                <ProductsTab
+                  products={data?.products ?? []}
+                  categories={data?.categories ?? []}
+                  markers={data?.markers ?? []}
+                  onChange={refresh}
+                />
+              )}
+              {activeTab === "additionals" && (
+                <AdditionalsTab
+                  additionals={data?.additionals ?? []}
+                  products={data?.products ?? []}
+                  companies={companies ?? []}
+                  companyId={companies?.[0]?.id ?? "all"}
+                />
+              )}
+              {activeTab === "markers" && (
+                <MarkersTab markers={data?.markers ?? []} onChange={refresh} />
+              )}
+              {activeTab === "qr" && (
+                <div className="rounded-lg border bg-white p-6 shadow-sm">
+                  <h2 className="text-lg font-bold mb-4">QR Code do Cardápio</h2>
+                  <p className="text-muted-foreground mb-4">
+                    Acesse ou baixe o QR Code do seu cardápio público para divulgação nas mesas e balcão.
+                  </p>
+                  <Button asChild>
+                    <Link to="/" target="_blank">Abrir cardápio público</Link>
+                  </Button>
+                </div>
+              )}
+              {activeTab.startsWith("tech_") && (
+                <div className="rounded-lg border bg-white p-6 shadow-sm">
+                  <h2 className="text-lg font-bold mb-2">
+                    {activeTab === "tech_dashboard" && "Dashboard de Fichas Técnicas"}
+                    {activeTab === "tech_inputs" && "Insumos Cadastrados"}
+                    {activeTab === "tech_preparations" && "Preparos Intermediários"}
+                    {activeTab === "tech_products" && "Fichas Técnicas dos Produtos Finais"}
+                  </h2>
+                  <p className="text-muted-foreground">
+                    Módulo de Engenharia de Cardápio e Fichas Técnicas em sincronização operacional.
+                  </p>
+                </div>
+              )}
+              {activeTab === "companies" && (
+                <CompaniesTab companies={companies ?? []} onChange={refresh} />
+              )}
+              {activeTab === "theme" && (
+                <ThemeTab theme={theme} onChange={refresh} />
+              )}
+              {activeTab === "profile" && (
+                <div className="rounded-lg border bg-white p-6 shadow-sm max-w-xl">
+                  <h2 className="text-lg font-bold mb-2">Minha Conta</h2>
+                  <p className="text-muted-foreground mb-4">
+                    Informações da sua sessão e credenciais de acesso ao painel.
+                  </p>
+                  <Button variant="destructive" onClick={async () => { await logout(); navigate("/admin"); }}>
+                    Sair da conta
+                  </Button>
+                </div>
+              )}
+              {activeTab === "users" && (
+                <div className="rounded-lg border bg-white p-6 shadow-sm">
+                  <h2 className="text-lg font-bold mb-2">Usuários do Sistema</h2>
+                  <p className="text-muted-foreground">
+                    Gerenciamento de acessos administrativos, editores e visualizadores por empresa.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </main>
+      </div>
     </div>
   );
 }

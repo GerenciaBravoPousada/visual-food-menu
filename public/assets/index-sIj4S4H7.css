@@ -57,3 +57,70 @@ input[name="comboOriginalPrice"]::-webkit-outer-spin-button,input[name="comboOri
   border-bottom: 3px solid #ea580c !important;
   background: #fff7ed !important;
 }
+
+/* === Reorganized Sidebar & Navigation === */
+.admin-tabs {
+  display: none !important;
+}
+.sidebar {
+  overflow-y: auto !important;
+  max-height: 100vh;
+}
+.admin-sidebar-nav {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+}
+.nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.nav-group-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #9c9488;
+  padding: 4px 8px 2px;
+}
+.nav-group-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nav-sub-item {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px !important;
+  font-size: 13.5px !important;
+  color: #d6cfc4 !important;
+  border-radius: var(--radius);
+  transition: all 0.15s ease;
+  cursor: pointer;
+  border: none !important;
+  background: transparent !important;
+  width: 100%;
+  text-align: left;
+}
+.nav-sub-item:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+.nav-sub-item.active {
+  background: rgba(255, 255, 255, 0.16) !important;
+  color: #ffffff !important;
+  font-weight: 600;
+}
+.nav-bullet {
+  font-size: 11px;
+  color: #8c8376;
+  font-weight: 700;
+  display: inline-block;
+  transform: translateY(-0.5px);
+}
+.nav-sub-item.active .nav-bullet,
+.nav-sub-item:hover .nav-bullet {
+  color: #ffffff;
+}
