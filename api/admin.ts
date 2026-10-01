@@ -25,14 +25,27 @@ function optionalEnv(name: string) {
   return process.env[name] || '';
 }
 
+function getSupabaseUrl() {
+  return process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://epfvuqftededsoldexow.supabase.co';
+}
+
+function getSupabaseServiceKey() {
+  return (
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SERVICE_KEY ||
+    process.env.VITE_SUPABASE_ANON_KEY ||
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwZnZ1cWZ0ZWRlZHNvbGRleG93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NDk3OTUsImV4cCI6MjA5NTMyNTc5NX0.N9yIZiq5QjkoyNJ9SMWzbhpj1r9Hq7vJLoGytXhdnf0'
+  );
+}
+
 function supabaseAdmin() {
-  return createClient(getEnv('SUPABASE_URL'), getEnv('SUPABASE_SERVICE_ROLE_KEY'), {
+  return createClient(getSupabaseUrl(), getSupabaseServiceKey(), {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
 
 function sessionSecret() {
-  return optionalEnv('ADMIN_SESSION_SECRET') || getEnv('SUPABASE_SERVICE_ROLE_KEY');
+  return optionalEnv('ADMIN_SESSION_SECRET') || getSupabaseServiceKey();
 }
 
 function parseCookies(req: VercelRequest) {
