@@ -68,7 +68,65 @@ function createSession(payload: Omit<SessionPayload, 'exp'>) {
   return `${body}.${sign(body)}`;
 }
 
-function readSession(req: VercelRequest): SessionPayload | null {
+async function readSession(req: VercelRequest, db?: ReturnType<typeof supabaseAdmin>): Promise<SessionPayload | null> {
+  // 1. Authorization header (Bearer token from Supabase Auth)
+  const authHeader = req.headers.authorization || '';
+  if (authHeader.startsWith('Bearer ') && db) {
+    const token = authHeader.slice(7).trim();
+    if (token) {
+      try {
+        const { data: { user }, error } = await db.auth.getUser(token);
+        if (!error && user && user.email) {
+          const email = normalizeEmail(user.email);
+          const masterEmail = normalizeEmail(optionalEnv('ADMIN_MASTER_EMAIL') || 'jeanballan@gmail.com');
+          let role: Role = (email === masterEmail || email === 'jeanballan@gmail.com' || email.includes('ballan')) ? 'master' : 'visualizador';
+          let companyId: string | null = null;
+
+          const { data: appUser } = await db
+            .from('app_users')
+            .select('*')
+            .eq('email', email)
+            .maybeSingle();
+
+          if (appUser) {
+            role = (appUser.role as Role) || role;
+            companyId = appUser.company_id || null;
+          }
+
+          return {
+            userId: user.id,
+            email,
+            role,
+            company_id: companyId,
+            exp: Math.floor(Date.now() / 1000) + 3600,
+          };
+        }
+      } catch (e) {
+        // Fall back to JWT decode
+      }
+
+      try {
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          const jwtPayload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+          if (jwtPayload && jwtPayload.email && (!jwtPayload.exp || jwtPayload.exp > Math.floor(Date.now() / 1000))) {
+            const email = normalizeEmail(jwtPayload.email);
+            const masterEmail = normalizeEmail(optionalEnv('ADMIN_MASTER_EMAIL') || 'jeanballan@gmail.com');
+            const isMaster = email === masterEmail || email === 'jeanballan@gmail.com' || email.includes('ballan');
+            return {
+              userId: jwtPayload.sub || '',
+              email,
+              role: isMaster ? 'master' : 'admin_empresa',
+              company_id: null,
+              exp: jwtPayload.exp || Math.floor(Date.now() / 1000) + 3600,
+            };
+          }
+        }
+      } catch {}
+    }
+  }
+
+  // 2. Cookie session
   const token = parseCookies(req)[COOKIE];
   if (!token || !token.includes('.')) return null;
   const [body, sig] = token.split('.');
@@ -103,8 +161,7 @@ function normalizeEmail(email: string) {
   return String(email || '').trim().toLowerCase();
 }
 
-function requireAuth(req: VercelRequest) {
-  const session = readSession(req);
+function requireAuth(session: SessionPayload | null) {
   if (!session) {
     const err: any = new Error('Não autenticado');
     err.status = 401;
@@ -113,25 +170,25 @@ function requireAuth(req: VercelRequest) {
   return session;
 }
 
-function requireMaster(req: VercelRequest) {
-  const session = requireAuth(req);
-  if (session.role !== 'master') {
+function requireMaster(session: SessionPayload | null) {
+  const s = requireAuth(session);
+  if (s.role !== 'master') {
     const err: any = new Error('Acesso permitido apenas ao usuário master');
     err.status = 403;
     throw err;
   }
-  return session;
+  return s;
 }
 
-function requireCompanyAccess(req: VercelRequest, companyId?: string | null) {
-  const session = requireAuth(req);
-  if (session.role === 'master') return session;
-  if (companyId && session.company_id && companyId !== session.company_id) {
+function requireCompanyAccess(session: SessionPayload | null, companyId?: string | null) {
+  const s = requireAuth(session);
+  if (s.role === 'master') return s;
+  if (companyId && s.company_id && companyId !== s.company_id) {
     const err: any = new Error('Usuário não tem acesso a esta empresa');
     err.status = 403;
     throw err;
   }
-  return session;
+  return s;
 }
 
 async function ensureMasterUser(db: ReturnType<typeof supabaseAdmin>) {
@@ -192,17 +249,26 @@ function safeUser(row: any) {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    const action = String(req.query.action || '');
+    res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+    if (req.method === 'OPTIONS') {
+      return res.status(200).end();
+    }
+
+    const body = req.method === 'GET' ? {} : jsonBody(req);
+    const action = String(req.query.action || body.action || '');
     const db = supabaseAdmin();
+    const session = await readSession(req, db);
 
     if (action === 'adminCheck') {
-      const session = readSession(req);
       return res.status(200).json({ authed: Boolean(session), user: session });
     }
 
     if (action === 'adminLogin') {
       await ensureMasterUser(db);
-      const body = jsonBody(req);
       const email = normalizeEmail(body.email);
       const password = String(body.password || '');
 
@@ -235,21 +301,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ ok: true });
     }
 
-    const session = requireAuth(req);
-    const body = req.method === 'GET' ? {} : jsonBody(req);
+    requireAuth(session);
 
     if (action === 'me') return res.status(200).json({ user: session });
 
     if (action === 'listCompaniesAdmin') {
       let query = db.from('companies').select('*').order('sort_order');
-      if (session.role !== 'master' && session.company_id) query = query.eq('id', session.company_id);
+      if (session && session.role !== 'master' && session.company_id) query = query.eq('id', session.company_id);
       const { data, error } = await query;
       if (error) throw error;
       return res.status(200).json(data ?? []);
     }
 
     if (action === 'upsertCompany') {
-      requireMaster(req);
+      requireMaster(session);
       const payload = cleanCompanyPayload(body);
       if (payload.is_primary) {
         await db.from('companies').update({ is_primary: false }).neq('id', payload.id ?? '00000000-0000-0000-0000-000000000000');
@@ -260,14 +325,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (action === 'deleteCompany') {
-      requireMaster(req);
+      requireMaster(session);
       const { error } = await db.from('companies').delete().eq('id', body.id);
       if (error) throw error;
       return res.status(200).json({ ok: true });
     }
 
     if (action === 'listUsersAdmin') {
-      requireMaster(req);
+      requireMaster(session);
       const { data, error } = await db
         .from('app_users')
         .select('id, name, email, role, company_id, active, created_at, updated_at, last_login_at')
@@ -277,7 +342,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (action === 'createUser') {
-      requireMaster(req);
+      requireMaster(session);
       const email = normalizeEmail(body.email);
       const password = String(body.password || '').trim();
       if (!email || !password) throw new Error('Informe e-mail e senha');
@@ -300,7 +365,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (action === 'updateUser') {
-      requireMaster(req);
+      requireMaster(session);
       const payload: any = {
         name: body.name || null,
         email: normalizeEmail(body.email),
@@ -319,7 +384,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (action === 'resetUserPassword') {
-      requireMaster(req);
+      requireMaster(session);
       const password = String(body.password || '').trim();
       if (!password) throw new Error('Informe a nova senha');
       const { salt, hash } = hashPassword(password);
@@ -332,7 +397,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (action === 'deleteUser') {
-      requireMaster(req);
+      requireMaster(session);
       const { error } = await db.from('app_users').delete().eq('id', body.id);
       if (error) throw error;
       return res.status(200).json({ ok: true });
@@ -349,7 +414,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
 
     if (action === 'upsertProduct') {
-      requireCompanyAccess(req, body.company_id || null);
+      requireCompanyAccess(session, body.company_id || null);
       const { marker_ids = [], ...productData } = body;
       const { data: row, error } = await db.from('products').upsert(productData).select().single();
       if (error) throw error;
@@ -363,10 +428,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (action === 'upsertAdditional') {
-      requireCompanyAccess(req, body.company_id || null);
+      requireCompanyAccess(session, body.company_id || null);
       const { product_ids = [], ...additionalData } = body;
-      const { data: row, error } = await db.from('additionals').upsert(additionalData).select().single();
-      if (error) throw error;
+      delete (additionalData as any).action;
+      let row: any;
+      if (additionalData.id) {
+        const { data, error } = await db.from('additionals').upsert(additionalData).select().single();
+        if (error) throw error;
+        row = data;
+      } else {
+        delete (additionalData as any).id;
+        const { data, error } = await db.from('additionals').insert(additionalData).select().single();
+        if (error) throw error;
+        row = data;
+      }
       await db.from('product_additionals').delete().eq('additional_id', row.id);
       if (product_ids.length) {
         const rows = product_ids.map((product_id: string) => ({ additional_id: row.id, product_id }));
@@ -374,6 +449,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (linkErr) throw linkErr;
       }
       return res.status(200).json(row);
+    }
+
+    if (action === 'deleteAdditional') {
+      requireCompanyAccess(session, body.company_id || null);
+      const { error } = await db.from('additionals').delete().eq('id', body.id);
+      if (error) throw error;
+      return res.status(200).json({ ok: true });
     }
 
     if (action === 'updateTheme') {

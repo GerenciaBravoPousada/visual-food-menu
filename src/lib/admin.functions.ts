@@ -19,9 +19,23 @@ type Action =
   | "uploadProductImage";
 
 async function callAdmin<T = any>(action: Action, data?: any): Promise<T> {
+  let token = "";
+  try {
+    const raw = localStorage.getItem("visual-food-menu-supabase-session");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      token = parsed.access_token || "";
+    }
+  } catch {}
+
+  const headers: Record<string, string> = {
+    ...(data === undefined ? {} : { "Content-Type": "application/json" }),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+
   const res = await fetch(`/api/admin?action=${action}`, {
     method: data === undefined ? "GET" : "POST",
-    headers: data === undefined ? undefined : { "Content-Type": "application/json" },
+    headers: Object.keys(headers).length > 0 ? headers : undefined,
     credentials: "include",
     body: data === undefined ? undefined : JSON.stringify(data),
   });
