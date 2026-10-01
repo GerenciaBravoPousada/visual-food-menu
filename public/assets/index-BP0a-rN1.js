@@ -450,11 +450,12 @@ ${o}`}function To(){let e=uo();if(!e)return`<div class="empty">Nenhuma empresa v
       </div>
     </div>
     <div class="admin-tabs">
-      <button class="${Na===`products`?`active`:``}" data-admin-section="products">Produtos</button>
-      <button class="${Na===`technical`?`active`:``}" data-admin-section="technical">Ficha Técnica</button>
       <button class="${Na===`categories`?`active`:``}" data-admin-section="categories">Categorias</button>
+      <button class="${Na===`products`?`active`:``}" data-admin-section="products">Produtos</button>
+      <button class="${Na===`additionals`?`active`:``}" data-admin-section="additionals">Adicionais</button>
       <button class="${Na===`tags`?`active`:``}" data-admin-section="tags">Marcadores</button>
       <button data-view="appearance">Cores</button>
+      <button class="${Na===`technical`?`active`:``}" data-admin-section="technical">Ficha Técnica</button>
       <button data-view="companies">Empresas</button>
       <button data-view="users">Usuarios</button>
     </div>
@@ -1119,6 +1120,7 @@ ${o}`}function To(){let e=uo();if(!e)return`<div class="empty">Nenhuma empresa v
       <div class="product-image-wrap">
         ${Ps(t,`product-image`,a.length>1?{action:`open-product-gallery`,images:a,title:r.name}:null,!0)}
         ${a.length>1?`<span class="gallery-count">${a.length} fotos</span>`:``}
+   ${(t.additionals&&t.additionals.length>0)||(t.additional_ids&&t.additional_ids.length>0)?`<span class="gallery-count" style="top:auto;bottom:8px;right:8px;left:auto;background:rgba(0,0,0,0.65)">adicionais disponíveis</span>`:``}
       </div>
       <div>
         <div class="product-title-row">

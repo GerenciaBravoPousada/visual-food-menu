@@ -120,12 +120,18 @@ export function AdminPanel() {
         ) : (
           <Tabs defaultValue="products">
             <TabsList className="flex-wrap">
-              <TabsTrigger value="products">Produtos</TabsTrigger>
               <TabsTrigger value="categories">Categorias</TabsTrigger>
+              <TabsTrigger value="products">Produtos</TabsTrigger>
+              <TabsTrigger value="additionals">Adicionais</TabsTrigger>
               <TabsTrigger value="markers">Marcadores</TabsTrigger>
-              <TabsTrigger value="companies">Empresa</TabsTrigger>
               <TabsTrigger value="theme">Cores</TabsTrigger>
+              <TabsTrigger value="tech_sheet">Ficha Técnica</TabsTrigger>
+              <TabsTrigger value="companies">Empresas</TabsTrigger>
+              <TabsTrigger value="users">Usuários</TabsTrigger>
             </TabsList>
+            <TabsContent value="categories" className="mt-6">
+              <CategoriesTab categories={data?.categories ?? []} onChange={refresh} />
+            </TabsContent>
             <TabsContent value="products" className="mt-6">
               <ProductsTab
                 products={data?.products ?? []}
@@ -134,17 +140,27 @@ export function AdminPanel() {
                 onChange={refresh}
               />
             </TabsContent>
-            <TabsContent value="categories" className="mt-6">
-              <CategoriesTab categories={data?.categories ?? []} onChange={refresh} />
+            <TabsContent value="additionals" className="mt-6">
+              <AdditionalsTab products={data?.products ?? []} onChange={refresh} />
             </TabsContent>
             <TabsContent value="markers" className="mt-6">
               <MarkersTab markers={data?.markers ?? []} onChange={refresh} />
             </TabsContent>
+            <TabsContent value="theme" className="mt-6">
+              <ThemeTab theme={theme} onChange={refresh} />
+            </TabsContent>
+            <TabsContent value="tech_sheet" className="mt-6">
+              <div className="rounded-lg border p-6 text-center text-muted-foreground">
+                Ficha Técnica em gestão operacional.
+              </div>
+            </TabsContent>
             <TabsContent value="companies" className="mt-6">
               <CompaniesTab companies={companies ?? []} onChange={refresh} />
             </TabsContent>
-            <TabsContent value="theme" className="mt-6">
-              <ThemeTab theme={theme} onChange={refresh} />
+            <TabsContent value="users" className="mt-6">
+              <div className="rounded-lg border p-6 text-center text-muted-foreground">
+                Gerenciamento de Usuários atrelado às Empresas.
+              </div>
             </TabsContent>
           </Tabs>
         )}
