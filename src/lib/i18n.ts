@@ -46,6 +46,8 @@ const dict = {
     prev: "Anterior",
     of: "de",
     ingredients: "Ingredientes",
+    additionals_available: "adicionais disponíveis",
+    additionals: "Adicionais",
   },
   en: {
     menu: "Menu",
@@ -78,6 +80,8 @@ const dict = {
     prev: "Previous",
     of: "of",
     ingredients: "Ingredients",
+    additionals_available: "Additionals available",
+    additionals: "Additionals",
   },
   es: {
     menu: "Menú",
@@ -110,6 +114,8 @@ const dict = {
     prev: "Anterior",
     of: "de",
     ingredients: "Ingredientes",
+    additionals_available: "adicionales disponibles",
+    additionals: "Adicionales",
   },
 } as const;
 

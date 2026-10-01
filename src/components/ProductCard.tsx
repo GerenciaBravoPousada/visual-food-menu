@@ -44,6 +44,11 @@ export function ProductCard({
             <ImageOff className="h-10 w-10" />
           </div>
         )}
+        {product.additional_ids && product.additional_ids.length > 0 && (
+          <span className="absolute bottom-2 right-2 rounded-full bg-black/60 px-2 py-1 text-xs font-semibold text-white backdrop-blur-md">
+            {t(lang, "additionals_available") ?? "Adicionais disponíveis"}
+          </span>
+        )}
       </div>
       <div className="flex flex-1 flex-col gap-2 p-4">
         <div className="flex items-start justify-between gap-3">

@@ -345,6 +345,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       deleteCategory: { table: 'categories', mode: 'delete' },
       upsertMarker: { table: 'markers', mode: 'upsert' },
       deleteMarker: { table: 'markers', mode: 'delete' },
+      deleteAdditional: { table: 'additionals', mode: 'delete' },
     };
 
     if (action === 'upsertProduct') {
@@ -356,6 +357,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (marker_ids.length) {
         const rows = marker_ids.map((marker_id: string) => ({ product_id: row.id, marker_id }));
         const { error: linkErr } = await db.from('product_markers').insert(rows);
+        if (linkErr) throw linkErr;
+      }
+      return res.status(200).json(row);
+    }
+
+    if (action === 'upsertAdditional') {
+      requireCompanyAccess(req, body.company_id || null);
+      const { product_ids = [], ...additionalData } = body;
+      const { data: row, error } = await db.from('additionals').upsert(additionalData).select().single();
+      if (error) throw error;
+      await db.from('product_additionals').delete().eq('additional_id', row.id);
+      if (product_ids.length) {
+        const rows = product_ids.map((product_id: string) => ({ additional_id: row.id, product_id }));
+        const { error: linkErr } = await db.from('product_additionals').insert(rows);
         if (linkErr) throw linkErr;
       }
       return res.status(200).json(row);

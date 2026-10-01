@@ -11,6 +11,8 @@ type Action =
   | "deleteCategory"
   | "upsertMarker"
   | "deleteMarker"
+  | "upsertAdditional"
+  | "deleteAdditional"
   | "upsertCompany"
   | "deleteCompany"
   | "updateTheme"
@@ -46,3 +48,5 @@ export const upsertCompany = (arg: ServerFnArg<any>) => callAdmin("upsertCompany
 export const deleteCompany = (arg: ServerFnArg<{ id: string }>) => callAdmin("deleteCompany", unwrap(arg));
 export const updateTheme = (arg: ServerFnArg<any>) => callAdmin("updateTheme", unwrap(arg));
 export const uploadProductImage = (arg: ServerFnArg<{ fileName: string; contentType: string; base64: string; folder?: string }>) => callAdmin<{ url: string }>("uploadProductImage", unwrap(arg));
+export const upsertAdditional = (arg: ServerFnArg<any>) => callAdmin("upsertAdditional", unwrap(arg));
+export const deleteAdditional = (arg: ServerFnArg<{ id: string }>) => callAdmin("deleteAdditional", unwrap(arg));

@@ -22,6 +22,14 @@ export type Marker = {
   sort_order: number;
 };
 
+export type Additional = {
+  id: string;
+  name: string;
+  price: number;
+  company_id: string;
+  active: boolean;
+};
+
 export type Product = {
   id: string;
   category_id: string;
@@ -45,6 +53,7 @@ export type Product = {
   ingredients_en: string | null;
   ingredients_es: string | null;
   marker_ids: string[];
+  additional_ids?: string[];
 };
 
 export type Company = {
@@ -75,7 +84,7 @@ export type ThemeSettings = {
 
 export async function fetchMenu() {
   try {
-    const [cats, prods, links] = await Promise.all([
+    const [cats, prods, links, addLinks, adds] = await Promise.all([
       supabase
         .from("categories")
         .select("*")
@@ -91,30 +100,44 @@ export async function fetchMenu() {
       supabase
         .from("product_markers")
         .select("*"),
+        
+      supabase
+        .from("product_additionals" as any)
+        .select("*"),
+        
+      supabase
+        .from("additionals" as any)
+        .select("*")
+        .order("name"),
     ]);
 
     const byProduct = new Map<string, string[]>();
-
-    for (const l of (links.data ?? []) as {
-      product_id: string;
-      marker_id: string;
-    }[]) {
+    for (const l of (links.data ?? []) as { product_id: string; marker_id: string; }[]) {
       const arr = byProduct.get(l.product_id) ?? [];
       arr.push(l.marker_id);
       byProduct.set(l.product_id, arr);
+    }
+    
+    const addsByProduct = new Map<string, string[]>();
+    for (const l of (addLinks.data ?? []) as unknown as { product_id: string; additional_id: string; }[]) {
+      const arr = addsByProduct.get(l.product_id) ?? [];
+      arr.push(l.additional_id);
+      addsByProduct.set(l.product_id, arr);
     }
 
     const products: Product[] = ((prods.data ?? []) as any[]).map(
       (p) => ({
         ...p,
         marker_ids: byProduct.get(p.id) ?? [],
+        additional_ids: addsByProduct.get(p.id) ?? [],
       })
     );
 
     return {
-      categories: (cats.data ?? []) as Category[],
+      categories: (cats.data ?? []) as unknown as Category[],
       products,
       markers: [],
+      additionals: (adds.data ?? []) as unknown as Additional[],
     };
 
   } catch (error) {

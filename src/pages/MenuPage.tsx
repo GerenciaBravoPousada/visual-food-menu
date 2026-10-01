@@ -229,6 +229,11 @@ function CarouselView({
               <ImageOff className="h-16 w-16" />
             </div>
           )}
+          {p.additional_ids && p.additional_ids.length > 0 && (
+            <span className="absolute bottom-3 right-3 rounded-full bg-black/60 px-3 py-1.5 text-sm font-semibold text-white backdrop-blur-md">
+              {t(lang, "additionals_available") ?? "Adicionais disponíveis"}
+            </span>
+          )}
           <button
             onClick={prev}
             className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-background/80 p-2 shadow hover:bg-background"
