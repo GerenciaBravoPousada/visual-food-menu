@@ -448,6 +448,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json(row);
     }
 
+    if (action === 'syncProductAdditionals') {
+      requireCompanyAccess(session, body.company_id || null);
+      const { product_id, additional_ids = [] } = body;
+      if (!product_id) throw new Error('ID do produto obrigatório');
+      await db.from('product_additionals').delete().eq('product_id', product_id);
+      if (additional_ids.length) {
+        const rows = additional_ids.map((additional_id: string) => ({ product_id, additional_id }));
+        const { error: linkErr } = await db.from('product_additionals').insert(rows);
+        if (linkErr) throw linkErr;
+      }
+      return res.status(200).json({ ok: true, count: additional_ids.length });
+    }
+
     if (action === 'upsertAdditional') {
       requireCompanyAccess(session, body.company_id || null);
       const { product_ids = [], ...additionalData } = body;

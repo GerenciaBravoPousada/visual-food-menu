@@ -638,11 +638,26 @@ function ProductDialog({
                   return (
                     <label
                       key={m.id}
-                      className="flex cursor-pointer items-center gap-2 text-sm"
+                      className="flex cursor-pointer items-center justify-between text-sm p-2 rounded-lg border transition-all"
+                      style={{
+                        borderColor: checked ? "#22c55e" : "var(--border)",
+                        backgroundColor: checked ? "rgba(34, 197, 94, 0.08)" : "transparent",
+                      }}
                     >
-                      <Checkbox checked={checked} onCheckedChange={() => toggleMarker(m.id)} />
-                      <MarkerIcon name={m.icon_name} className="h-4 w-4" style={{ color: m.icon_color }} />
-                      {m.label_pt}
+                      <div className="flex items-center gap-2">
+                        <MarkerIcon name={m.icon_name} className="h-4 w-4" style={{ color: m.icon_color }} />
+                        <span className="font-medium">{m.label_pt}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                            checked ? "bg-green-100 text-green-700" : "bg-stone-100 text-stone-500"
+                          }`}
+                        >
+                          {checked ? "ATIVADO" : "DESATIVADO"}
+                        </span>
+                        <Switch checked={checked} onCheckedChange={() => toggleMarker(m.id)} />
+                      </div>
                     </label>
                   );
                 })}
@@ -651,7 +666,7 @@ function ProductDialog({
           </div>
 
           <div className="rounded-lg border border-border p-3">
-            <Label className="mb-2 block text-sm font-semibold">Adicionais</Label>
+            <Label className="mb-2 block text-sm font-semibold">Adicionais do Produto</Label>
             {activeAdditionals.length === 0 ? (
               <p className="text-xs text-muted-foreground">
                 Nenhum adicional cadastrado. Vá em "Adicionais" para criar.
@@ -663,18 +678,37 @@ function ProductDialog({
                   return (
                     <label
                       key={a.id}
-                      className="flex cursor-pointer items-center justify-between text-sm hover:bg-muted/50 p-1 rounded"
+                      className="flex cursor-pointer items-center justify-between text-sm p-2 rounded-lg border transition-all"
+                      style={{
+                        borderColor: checked ? "#22c55e" : "var(--border)",
+                        backgroundColor: checked ? "rgba(34, 197, 94, 0.08)" : "transparent",
+                      }}
                     >
                       <div className="flex items-center gap-2">
-                        <Checkbox checked={checked} onCheckedChange={() => toggleAdditional(a.id)} />
-                        {a.icon && <span className="text-base">{a.icon}</span>}
-                        <span>{a.name}</span>
+                        {a.icon ? (
+                          <span className="text-base">{a.icon}</span>
+                        ) : (
+                          <span className="text-base">🍽️</span>
+                        )}
+                        <div>
+                          <span className="font-medium block">{a.name}</span>
+                          {a.price != null && (
+                            <span className="text-xs font-bold text-amber-700">
+                              + R$ {Number(a.price).toFixed(2).replace(".", ",")}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      {a.price != null && (
-                        <span className="text-xs font-semibold text-muted-foreground">
-                          + R$ {Number(a.price).toFixed(2).replace(".", ",")}
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                            checked ? "bg-green-100 text-green-700" : "bg-stone-100 text-stone-500"
+                          }`}
+                        >
+                          {checked ? "ATIVADO" : "DESATIVADO"}
                         </span>
-                      )}
+                        <Switch checked={checked} onCheckedChange={() => toggleAdditional(a.id)} />
+                      </div>
                     </label>
                   );
                 })}
