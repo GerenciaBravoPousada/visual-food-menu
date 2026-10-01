@@ -44,6 +44,15 @@ export function ProductCard({
             <ImageOff className="h-10 w-10" />
           </div>
         )}
+        
+        {/* Pílula de Quantidade de Fotos (Superior Direito) */}
+        {(product as any).photos && (product as any).photos.length > 1 && (
+          <span className="absolute right-2 top-2 rounded-full bg-black/60 px-2 py-1 text-xs font-semibold text-white backdrop-blur-md">
+            {(product as any).photos.length} fotos
+          </span>
+        )}
+
+        {/* Pílula de Adicionais Disponíveis (Inferior Direito) */}
         {product.additional_ids && product.additional_ids.length > 0 && (
           <span className="absolute bottom-2 right-2 rounded-full bg-black/60 px-2 py-1 text-xs font-semibold text-white backdrop-blur-md">
             {t(lang, "additionals_available") ?? "Adicionais disponíveis"}
