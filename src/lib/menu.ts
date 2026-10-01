@@ -28,6 +28,8 @@ export type Additional = {
   price: number;
   company_id: string;
   active: boolean;
+  icon?: string;
+  icon_url?: string;
 };
 
 export type Product = {
@@ -84,7 +86,7 @@ export type ThemeSettings = {
 
 export async function fetchMenu() {
   try {
-    const [cats, prods, links, addLinks, adds] = await Promise.all([
+    const [cats, prods, links, addLinks, adds, marks] = await Promise.all([
       supabase
         .from("categories")
         .select("*")
@@ -109,6 +111,11 @@ export async function fetchMenu() {
         .from("additionals" as any)
         .select("*")
         .order("name"),
+
+      supabase
+        .from("markers" as any)
+        .select("*")
+        .order("sort_order"),
     ]);
 
     const byProduct = new Map<string, string[]>();
@@ -136,7 +143,7 @@ export async function fetchMenu() {
     return {
       categories: (cats.data ?? []) as unknown as Category[],
       products,
-      markers: [],
+      markers: (marks.data ?? []) as unknown as Marker[],
       additionals: (adds.data ?? []) as unknown as Additional[],
     };
 

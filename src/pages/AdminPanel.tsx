@@ -21,6 +21,7 @@ import {
 import {
   fetchMenu,
   fetchTheme,
+  type Additional,
   type Category,
   type Company,
   type Marker,
@@ -245,6 +246,7 @@ export function AdminPanel() {
                   products={data?.products ?? []}
                   categories={data?.categories ?? []}
                   markers={data?.markers ?? []}
+                  additionals={data?.additionals ?? []}
                   onChange={refresh}
                 />
               )}
@@ -322,11 +324,13 @@ function ProductsTab({
   products,
   categories,
   markers,
+  additionals,
   onChange,
 }: {
   products: Product[];
   categories: Category[];
   markers: Marker[];
+  additionals: Additional[];
   onChange: () => void;
 }) {
   const [editing, setEditing] = useState<Partial<Product> | null>(null);
@@ -353,6 +357,7 @@ function ProductsTab({
     ingredients_en: "",
     ingredients_es: "",
     marker_ids: [],
+    additional_ids: [],
   });
 
   return (
@@ -416,6 +421,7 @@ function ProductsTab({
           product={editing}
           categories={categories}
           markers={markers}
+          additionals={additionals}
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null);
@@ -431,12 +437,14 @@ function ProductDialog({
   product,
   categories,
   markers,
+  additionals,
   onClose,
   onSaved,
 }: {
   product: Partial<Product>;
   categories: Category[];
   markers: Marker[];
+  additionals: Additional[];
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -453,6 +461,13 @@ function ProductDialog({
     if (cur.has(id)) cur.delete(id);
     else cur.add(id);
     update("marker_ids", Array.from(cur) as any);
+  };
+
+  const toggleAdditional = (id: string) => {
+    const cur = new Set(p.additional_ids ?? []);
+    if (cur.has(id)) cur.delete(id);
+    else cur.add(id);
+    update("additional_ids", Array.from(cur) as any);
   };
 
   const onFile = async (file: File) => {
@@ -505,6 +520,7 @@ function ProductDialog({
           ingredients_en: p.ingredients_en ?? null,
           ingredients_es: p.ingredients_es ?? null,
           marker_ids: p.marker_ids ?? [],
+          additional_ids: p.additional_ids ?? [],
         } as any,
       });
       toast.success("Salvo");
@@ -517,6 +533,7 @@ function ProductDialog({
   };
 
   const activeMarkers = markers.filter((m) => m.active);
+  const activeAdditionals = additionals.filter((a) => a.active);
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -626,6 +643,38 @@ function ProductDialog({
                       <Checkbox checked={checked} onCheckedChange={() => toggleMarker(m.id)} />
                       <MarkerIcon name={m.icon_name} className="h-4 w-4" style={{ color: m.icon_color }} />
                       {m.label_pt}
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-lg border border-border p-3">
+            <Label className="mb-2 block text-sm font-semibold">Adicionais</Label>
+            {activeAdditionals.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Nenhum adicional cadastrado. Vá em "Adicionais" para criar.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {activeAdditionals.map((a) => {
+                  const checked = (p.additional_ids ?? []).includes(a.id);
+                  return (
+                    <label
+                      key={a.id}
+                      className="flex cursor-pointer items-center justify-between text-sm hover:bg-muted/50 p-1 rounded"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Checkbox checked={checked} onCheckedChange={() => toggleAdditional(a.id)} />
+                        {a.icon && <span className="text-base">{a.icon}</span>}
+                        <span>{a.name}</span>
+                      </div>
+                      {a.price != null && (
+                        <span className="text-xs font-semibold text-muted-foreground">
+                          + R$ {Number(a.price).toFixed(2).replace(".", ",")}
+                        </span>
+                      )}
                     </label>
                   );
                 })}

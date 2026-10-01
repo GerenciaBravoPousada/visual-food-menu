@@ -428,13 +428,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (action === 'upsertProduct') {
       requireCompanyAccess(session, body.company_id || null);
-      const { marker_ids = [], ...productData } = body;
+      const { marker_ids = [], additional_ids = [], additionalIds = [], ...productData } = body;
+      const finalAddIds = (additional_ids && additional_ids.length) ? additional_ids : (additionalIds || []);
       const { data: row, error } = await db.from('products').upsert(productData).select().single();
       if (error) throw error;
       await db.from('product_markers').delete().eq('product_id', row.id);
       if (marker_ids.length) {
         const rows = marker_ids.map((marker_id: string) => ({ product_id: row.id, marker_id }));
         const { error: linkErr } = await db.from('product_markers').insert(rows);
+        if (linkErr) throw linkErr;
+      }
+      await db.from('product_additionals').delete().eq('product_id', row.id);
+      if (finalAddIds.length) {
+        const rows = finalAddIds.map((additional_id: string) => ({ product_id: row.id, additional_id }));
+        const { error: linkErr } = await db.from('product_additionals').insert(rows);
         if (linkErr) throw linkErr;
       }
       return res.status(200).json(row);
