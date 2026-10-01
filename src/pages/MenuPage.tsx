@@ -10,6 +10,12 @@ import { Input } from "@/components/ui/input";
 import { LayoutGrid, Images, Search, ChevronLeft, ChevronRight, ImageOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logoBravo from "@/assets/logo-bravo-cafe.png";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type View = "grid" | "carousel";
 
@@ -146,7 +152,13 @@ export function MenuPage() {
                     </div>
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                       {items.map((p) => (
-                        <ProductCard key={p.id} product={p} lang={lang} markers={data?.markers ?? []} />
+                        <ProductCard
+                          key={p.id}
+                          product={p}
+                          lang={lang}
+                          markers={data?.markers ?? []}
+                          additionals={data?.additionals ?? []}
+                        />
                       ))}
                     </div>
                   </section>
@@ -163,6 +175,7 @@ export function MenuPage() {
             lang={lang}
             idx={carouselIdx}
             setIdx={setCarouselIdx}
+            additionals={data?.additionals ?? []}
           />
         )}
       </main>
@@ -205,17 +218,23 @@ function CarouselView({
   lang,
   idx,
   setIdx,
+  additionals = [],
 }: {
   products: ReturnType<typeof useMemo<any[]>>;
   lang: ReturnType<typeof useLang>[0];
   idx: number;
   setIdx: (n: number) => void;
+  additionals?: any[];
 }) {
+  const [openAdds, setOpenAdds] = useState(false);
   const list = products as any[];
   if (!list.length) {
     return <p className="py-20 text-center text-muted-foreground">{t(lang, "empty")}</p>;
   }
   const p = list[Math.min(idx, list.length - 1)];
+  const productAdds = (additionals || []).filter(
+    (a) => a.active !== false && p?.additional_ids?.includes(a.id),
+  );
   const prev = () => setIdx((idx - 1 + list.length) % list.length);
   const next = () => setIdx((idx + 1) % list.length);
   return (
@@ -229,10 +248,14 @@ function CarouselView({
               <ImageOff className="h-16 w-16" />
             </div>
           )}
-          {p.additional_ids && p.additional_ids.length > 0 && (
-            <span className="absolute bottom-3 right-3 rounded-full bg-black/60 px-3 py-1.5 text-sm font-semibold text-white backdrop-blur-md">
-              {t(lang, "additionals_available") ?? "Adicionais disponíveis"}
-            </span>
+          {productAdds.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setOpenAdds(true)}
+              className="absolute bottom-3 right-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-black/85 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white shadow-lg backdrop-blur-md transition hover:bg-black hover:scale-105 active:scale-95"
+            >
+              <span>+</span> {t(lang, "view_additionals") ?? "Ver adicionais"}
+            </button>
           )}
           <button
             onClick={prev}
@@ -262,6 +285,49 @@ function CarouselView({
           </p>
         </div>
       </div>
+
+      <Dialog open={openAdds} onOpenChange={setOpenAdds}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="text-xs font-bold uppercase tracking-wider text-primary">
+              {lang === "en" ? "Options & Additionals" : lang === "es" ? "Opciones y Adicionales" : "Opções & Adicionais"}
+            </div>
+            <DialogTitle className="text-lg font-bold">
+              {pickName(p, lang)}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[60vh] space-y-2 overflow-y-auto pr-1">
+            {productAdds.map((a: any) => (
+              <div
+                key={a.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-3 shadow-sm"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  {a.icon || a.icon_url ? (
+                    <img
+                      src={a.icon || a.icon_url}
+                      alt=""
+                      className="h-10 w-10 shrink-0 rounded-lg border border-border object-cover bg-muted"
+                    />
+                  ) : (
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-lg">
+                      🍽️
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="font-semibold text-sm leading-tight text-foreground truncate">
+                      {a.name}
+                    </p>
+                  </div>
+                </div>
+                <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
+                  + {formatPrice(a.price, lang)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

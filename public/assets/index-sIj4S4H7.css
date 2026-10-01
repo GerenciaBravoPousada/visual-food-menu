@@ -124,3 +124,47 @@ input[name="comboOriginalPrice"]::-webkit-outer-spin-button,input[name="comboOri
 .nav-sub-item:hover .nav-bullet {
   color: #ffffff;
 }
+
+/* Floating Additionals Button & Popup Modal */
+.btn-floating-additionals {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(18, 18, 18, 0.88);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 9999px;
+  padding: 6px 13px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  line-height: 1;
+}
+.btn-floating-additionals:hover {
+  background: #000000;
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px) scale(1.03);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+}
+.btn-floating-additionals:active {
+  transform: translateY(0) scale(0.97);
+}
+.additionals-modal {
+  max-width: 440px !important;
+  width: 92% !important;
+  background: #ffffff !important;
+  border-radius: 16px !important;
+  padding: 24px !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28) !important;
+  position: relative;
+}

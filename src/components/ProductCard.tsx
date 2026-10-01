@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { type Lang, formatPrice, pickDesc, pickName, pickIngredients, t } from "@/lib/i18n";
-import type { Marker, Product } from "@/lib/menu";
-import { ImageOff } from "lucide-react";
+import type { Additional, Marker, Product } from "@/lib/menu";
+import { ImageOff, Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -18,15 +18,21 @@ export function ProductCard({
   product,
   lang,
   markers,
+  additionals = [],
 }: {
   product: Product;
   lang: Lang;
   markers: Marker[];
+  additionals?: Additional[];
 }) {
   const [open, setOpen] = useState(false);
+  const [openAdditionals, setOpenAdditionals] = useState(false);
   const ingredients = pickIngredients(product, lang);
   const productMarkers = markers.filter(
     (m) => m.active && product.marker_ids.includes(m.id),
+  );
+  const productAdditionals = (additionals || []).filter(
+    (a) => a.active !== false && product.additional_ids?.includes(a.id),
   );
 
   return (
@@ -52,11 +58,20 @@ export function ProductCard({
           </span>
         )}
 
-        {/* Pílula de Adicionais Disponíveis (Inferior Direito) */}
-        {product.additional_ids && product.additional_ids.length > 0 && (
-          <span className="absolute bottom-2 right-2 rounded-full bg-black/60 px-2 py-1 text-xs font-semibold text-white backdrop-blur-md">
-            {t(lang, "additionals_available") ?? "Adicionais disponíveis"}
-          </span>
+        {/* Botão Flutuante de Adicionais (Canto Inferior Direito) */}
+        {productAdditionals.length > 0 && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpenAdditionals(true);
+            }}
+            className="absolute bottom-2 right-2 z-10 inline-flex items-center gap-1.5 rounded-full bg-black/85 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white shadow-lg backdrop-blur-md transition hover:bg-black hover:scale-105 active:scale-95"
+            title={t(lang, "view_additionals") ?? "Ver adicionais"}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span>{t(lang, "view_additionals") ?? "Ver adicionais"}</span>
+          </button>
         )}
       </div>
       <div className="flex flex-1 flex-col gap-2 p-4">
@@ -98,6 +113,7 @@ export function ProductCard({
         </div>
       </div>
 
+      {/* Modal de Ingredientes */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -106,6 +122,50 @@ export function ProductCard({
             </DialogTitle>
           </DialogHeader>
           <p className="whitespace-pre-line text-sm text-foreground">{ingredients}</p>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Adicionais */}
+      <Dialog open={openAdditionals} onOpenChange={setOpenAdditionals}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="text-xs font-bold uppercase tracking-wider text-primary">
+              {lang === "en" ? "Options & Additionals" : lang === "es" ? "Opciones y Adicionales" : "Opções & Adicionais"}
+            </div>
+            <DialogTitle className="text-lg font-bold">
+              {pickName(product, lang)}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[60vh] space-y-2 overflow-y-auto pr-1">
+            {productAdditionals.map((a) => (
+              <div
+                key={a.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-3 shadow-sm"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  {a.icon || a.icon_url ? (
+                    <img
+                      src={a.icon || a.icon_url}
+                      alt=""
+                      className="h-10 w-10 shrink-0 rounded-lg border border-border object-cover bg-muted"
+                    />
+                  ) : (
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-lg">
+                      🍽️
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="font-semibold text-sm leading-tight text-foreground truncate">
+                      {a.name}
+                    </p>
+                  </div>
+                </div>
+                <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
+                  + {formatPrice(a.price, lang)}
+                </span>
+              </div>
+            ))}
+          </div>
         </DialogContent>
       </Dialog>
     </article>

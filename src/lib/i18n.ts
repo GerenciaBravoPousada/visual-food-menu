@@ -48,6 +48,7 @@ const dict = {
     ingredients: "Ingredientes",
     additionals_available: "adicionais disponíveis",
     additionals: "Adicionais",
+    view_additionals: "Ver adicionais",
   },
   en: {
     menu: "Menu",
@@ -82,6 +83,7 @@ const dict = {
     ingredients: "Ingredients",
     additionals_available: "Additionals available",
     additionals: "Additionals",
+    view_additionals: "View additionals",
   },
   es: {
     menu: "Menú",
@@ -116,6 +118,7 @@ const dict = {
     ingredients: "Ingredientes",
     additionals_available: "adicionales disponibles",
     additionals: "Adicionales",
+    view_additionals: "Ver adicionales",
   },
 } as const;
 
