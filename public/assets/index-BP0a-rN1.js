@@ -1260,13 +1260,19 @@ ${o}`}function To(){let e=uo();if(!e)return`<div class="empty">Nenhuma empresa v
 function VfmGetProductAdditionals(comp, prod) {
   if (!prod) return [];
   if (Array.isArray(prod.additionals) && prod.additionals.length > 0 && typeof prod.additionals[0] === 'object' && prod.additionals[0].name) {
-    return prod.additionals.filter(a => a.active !== false);
+    let seen = new Set();
+    return prod.additionals.filter(a => {
+      if (!a || a.active === false || seen.has(a.id)) return false;
+      seen.add(a.id);
+      return true;
+    });
   }
-  let idList = [
+  let rawList = [
     ...(Array.isArray(prod.additionalIds) ? prod.additionalIds : []),
     ...(Array.isArray(prod.additional_ids) ? prod.additional_ids : []),
     ...(Array.isArray(prod.additionals) ? prod.additionals.map(x => typeof x === 'object' ? x.id : x) : [])
   ].filter(Boolean);
+  let idList = Array.from(new Set(rawList));
   if (!idList.length) return [];
   
   let pool = [];
@@ -1289,11 +1295,17 @@ function VfmGetProductAdditionals(comp, prod) {
       map.set(a.id, a);
     }
   }
-  return idList.map(id => {
+  let seen = new Set();
+  let result = [];
+  for (let id of idList) {
+    if (seen.has(id)) continue;
+    seen.add(id);
     let found = map.get(id);
-    if (found) return found;
-    return { id, name: 'Adicional', price: 0, active: true };
-  }).filter(a => a && a.active !== false);
+    if (found && found.active !== false) {
+      result.push(found);
+    }
+  }
+  return result;
 }
 
 function openAdditionalsModal(prodName, adds){
@@ -1304,7 +1316,16 @@ function openAdditionalsModal(prodName, adds){
   let labelTitle = ka === 'en' ? 'Options & Additionals' : ka === 'es' ? 'Opciones y Adicionales' : 'Opções & Adicionais';
   let closeBtnText = ka === 'en' ? 'Close' : ka === 'es' ? 'Cerrar' : 'Fechar';
   let emptyText = ka === 'en' ? 'No additionals available.' : ka === 'es' ? 'No hay adicionales disponibles.' : 'Nenhum adicional disponível para este item.';
-  let itemsHtml = (adds || []).map(a => {
+  let uniqueAdds = [];
+  let seenKeys = new Set();
+  for (let a of (adds || [])) {
+    let key = a?.id || a?.name;
+    if (key && !seenKeys.has(key)) {
+      seenKeys.add(key);
+      uniqueAdds.push(a);
+    }
+  }
+  let itemsHtml = uniqueAdds.map(a => {
     let nameStr = (ka === 'en' ? a.translations?.en : ka === 'es' ? a.translations?.es : null) || a.name;
     let priceStr = '+ ' + X(a.price);
     let iconVal = String(a.icon || a.icon_url || '').trim();
