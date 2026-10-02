@@ -1028,7 +1028,7 @@ ${o}`}function To(){let e=uo();if(!e)return`<div class="empty">Nenhuma empresa v
       <div class="field"><label>Descricao</label><textarea name="${e}_description">${n.description||``}</textarea></div>
       <div class="field"><label>Ingredientes</label><textarea name="${e}_ingredients" placeholder="Um por linha ou separados por virgula">${n.ingredients||``}</textarea></div>
     </section>
-  `}function fs(e={},t=`pt`){if(!e)return``;if(typeof e.translations===`string`)try{e.translations=JSON.parse(e.translations)}catch{e.translations={}}let val=e.translations?.[t];if(val)return val;if(t===`pt`)return e.name||``;if(e.name)return(typeof cc===`function`?cc(e.name,t):e.name)||e.name;return``},t=`pt`){if(!e)return``;if(typeof e.translations==`string`)try{e.translations=JSON.parse(e.translations)}catch{e.translations={}}return e.translations?.[t]||(t===`pt`?e.name:``)||``}function ps(e,t){let n=e.categories.find(e=>e.id===t.categoryId),r=Fs(t);Ro(e);let i=Yo(e,t.id),a=Xo(e,t.id);return`
+  `}function fs(e={},t="pt"){if(!e)return "";if(typeof e.translations==="string")try{e.translations=JSON.parse(e.translations)}catch{e.translations={}}let val=e.translations?.[t];if(val)return val;if(t==="pt")return e.name||"";if(e.name)return(typeof cc==="function"?cc(e.name,t):e.name)||e.name;return ""}function ps(e,t){let n=e.categories.find(e=>e.id===t.categoryId),r=Fs(t);Ro(e);let i=Yo(e,t.id),a=Xo(e,t.id);return`
     <article class="admin-product-card">
       ${Ps(t,`admin-product-image`)}
       <div class="admin-product-body">
