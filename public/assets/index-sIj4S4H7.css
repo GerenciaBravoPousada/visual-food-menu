@@ -323,18 +323,53 @@ input[name="comboOriginalPrice"]::-webkit-outer-spin-button,input[name="comboOri
   display: flex !important;
   flex-wrap: wrap !important;
   align-items: flex-end !important;
-  gap: 16px !important;
+  gap: 14px !important;
+  border: 1px solid var(--line) !important;
+  background: #fffdfa !important;
+  border-radius: 8px !important;
+  padding: 12px 14px !important;
+  margin-bottom: 14px !important;
 }
 .product-filter-bar .field.search-field {
-  flex: 1 1 200px !important;
-  min-width: 180px !important;
+  flex: 2 1 240px !important;
+  min-width: 200px !important;
+  margin-bottom: 0 !important;
 }
-.product-filter-bar .field.search-field input {
+.product-filter-bar .field {
+  flex: 1 1 180px !important;
+  min-width: 160px !important;
+  margin-bottom: 0 !important;
+}
+.product-filter-bar .field label {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: var(--ink) !important;
+  margin-bottom: 5px !important;
+  display: block !important;
+}
+.product-filter-bar .field input,
+.product-filter-bar .field select {
   height: 38px !important;
-  border-radius: 8px !important;
-  border: 1px solid #cbd5e1 !important;
-  padding: 0 12px !important;
+  border-radius: var(--radius, 8px) !important;
+  border: 1px solid var(--line, #ded8cc) !important;
+  padding: 0 10px !important;
   font-size: 13px !important;
   width: 100% !important;
   background: #ffffff !important;
+  color: var(--ink) !important;
+  box-sizing: border-box !important;
 }
+.product-filter-bar .field input:focus,
+.product-filter-bar .field select:focus {
+  outline: none !important;
+  border-color: var(--brand, #d94f30) !important;
+}
+.product-filter-bar .product-filter-count {
+  margin-left: auto !important;
+  align-self: center !important;
+  color: var(--muted) !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
+}
+
