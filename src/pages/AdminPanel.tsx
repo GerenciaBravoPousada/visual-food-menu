@@ -229,7 +229,22 @@ export function AdminPanel() {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" asChild>
-              <Link to="/">Ver cardápio</Link>
+              <Link to="/" target="_blank">Ver cardápio</Link>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              type="button"
+              onClick={() => {
+                const comp = companies?.[0];
+                if (typeof (window as any).generateMenuPdf === "function") {
+                  (window as any).generateMenuPdf(comp || data);
+                } else {
+                  window.print();
+                }
+              }}
+            >
+              Download
             </Button>
           </div>
         </header>
