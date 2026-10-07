@@ -1473,8 +1473,8 @@ async function generateMenuPdf(comp){
   // Create loading overlay
   let loadingEl=document.createElement('div');
   loadingEl.id='vfm-pdf-loading';
-  loadingEl.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-family:sans-serif;gap:12px;';
-  loadingEl.innerHTML='<div style="width:40px;height:40px;border:4px solid #fff;border-top-color:transparent;border-radius:50%;animation:vfmSpin 0.8s linear infinite;"></div><div style="font-size:16px;font-weight:700;">Gerando PDF do cardápio...</div><style>@keyframes vfmSpin{to{transform:rotate(360deg)}}</style>';
+  loadingEl.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-family:Inter,system-ui,sans-serif;gap:14px;';
+  loadingEl.innerHTML='<div style="width:44px;height:44px;border:4px solid rgba(255,255,255,0.3);border-top-color:#d94f30;border-radius:50%;animation:vfmSpin 0.7s linear infinite;"></div><div style="font-size:16px;font-weight:700;">Gerando PDF do cardápio...</div><div style="font-size:12px;color:#94a3b8;">Aguarde o download automático</div><style>@keyframes vfmSpin{to{transform:rotate(360deg)}}</style>';
   document.body.appendChild(loadingEl);
 
   function removeLoading(){
@@ -1496,10 +1496,10 @@ async function generateMenuPdf(comp){
     grouped.push({category:'Outros',products:uncatProds});
   }
 
-  // Build printable container
+  // Build printable container positioned on screen (not offscreen -9999px)
   let container=document.createElement('div');
   container.id='vfm-pdf-print-container';
-  container.style.cssText='position:absolute;left:-9999px;top:0;width:190mm;background:#fff;color:#111;font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;padding:0;box-sizing:border-box;';
+  container.style.cssText='position:fixed;top:0;left:0;width:190mm;background:#ffffff;color:#111111;font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;padding:8mm 8mm 12mm 8mm;box-sizing:border-box;z-index:999990;overflow:visible;';
 
   let html=`
     <div style="padding: 0 0 10px 0; margin-bottom: 12px; border-bottom: 2px solid #1d1b18; display: flex; justify-content: space-between; align-items: flex-end;">
@@ -1550,6 +1550,23 @@ async function generateMenuPdf(comp){
   container.innerHTML=html;
   document.body.appendChild(container);
 
+  // Preload all images before rendering
+  let imgElements=Array.from(container.querySelectorAll('img'));
+  await Promise.all(imgElements.map(img=>{
+    if(img.complete)return Promise.resolve();
+    return new Promise(res=>{
+      img.onload=res;
+      img.onerror=()=>{
+        img.style.display='none';
+        res();
+      };
+      setTimeout(res, 2500);
+    });
+  }));
+
+  // Small delay to ensure styles and font rendering are painted
+  await new Promise(r=>setTimeout(r, 200));
+
   // Load html2pdf dynamically if not present
   try {
     if(!window.html2pdf){
@@ -1567,12 +1584,19 @@ async function generateMenuPdf(comp){
       margin: [8, 8, 12, 8],
       filename: `Cardapio_${cleanName}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, logging: false },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        scrollX: 0,
+        scrollY: 0,
+        logging: false
+      },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
     };
 
-    let worker=window.html2pdf().set(opt).from(container).toPdf().get('pdf').then(function(pdf){
+    await window.html2pdf().set(opt).from(container).toPdf().get('pdf').then(function(pdf){
       let totalPages=pdf.internal.getNumberOfPages();
       for(let i=1;i<=totalPages;i++){
         pdf.setPage(i);
@@ -1585,13 +1609,11 @@ async function generateMenuPdf(comp){
       }
     }).save();
 
-    await worker;
     removeLoading();
     container.remove();
   } catch(err) {
     console.warn('html2pdf fallback to print window:', err);
     removeLoading();
-    // Fallback: Open print dialog
     let printWin=window.open('','_blank');
     if(printWin){
       printWin.document.write(`
