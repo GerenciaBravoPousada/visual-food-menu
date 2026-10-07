@@ -60,6 +60,7 @@ import {
   Clock,
   X,
   RotateCcw,
+  Search,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -334,7 +335,49 @@ function ProductsTab({
   onChange: () => void;
 }) {
   const [editing, setEditing] = useState<Partial<Product> | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedMarker, setSelectedMarker] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState<string>("");
   const del = deleteProduct;
+
+  const filteredProducts = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    const shouldSearchText = q.length >= 4;
+
+    return products.filter((p) => {
+      // 1. Categoria
+      if (selectedCategory !== "all" && p.category_id !== selectedCategory) {
+        return false;
+      }
+
+      // 2. Marcador
+      if (selectedMarker !== "all" && !(p.marker_ids ?? []).includes(selectedMarker)) {
+        return false;
+      }
+
+      // 3. Busca livre por texto (nome, descrição, ingredientes) - apenas a partir de 4 caracteres
+      if (shouldSearchText) {
+        const fields = [
+          p.name_pt,
+          p.name_en,
+          p.name_es,
+          (p as any).name,
+          p.description_pt,
+          p.description_en,
+          p.description_es,
+          p.ingredients_pt,
+          p.ingredients_en,
+          p.ingredients_es,
+        ];
+        const matches = fields.some(
+          (val) => typeof val === "string" && val.toLowerCase().includes(q)
+        );
+        if (!matches) return false;
+      }
+
+      return true;
+    });
+  }, [products, selectedCategory, selectedMarker, searchTerm]);
 
   const newProduct = (): Partial<Product> => ({
     category_id: categories[0]?.id ?? "",
@@ -362,13 +405,86 @@ function ProductsTab({
 
   return (
     <div>
-      <div className="mb-4 flex justify-end">
-        <Button onClick={() => setEditing(newProduct())} disabled={!categories.length}>
-          <Plus className="mr-1 h-4 w-4" /> Novo produto
-        </Button>
+      <div className="mb-6 rounded-xl border border-border bg-card p-4 shadow-sm space-y-3">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end justify-between">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 flex-1">
+            {/* Filtro 1: Categoria */}
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1 block">
+                Categoria
+              </Label>
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-full bg-background">
+                  <SelectValue placeholder="Todas as categorias" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as categorias</SelectItem>
+                  {categories.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name_pt || (c as any).name || c.slug}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Filtro 2: Marcador */}
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1 block">
+                Marcador
+              </Label>
+              <Select value={selectedMarker} onValueChange={setSelectedMarker}>
+                <SelectTrigger className="w-full bg-background">
+                  <SelectValue placeholder="Todos os marcadores" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os marcadores</SelectItem>
+                  {markers.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.label_pt}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Filtro 3: Busca livre por texto (mínimo 4 caracteres) */}
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1 block">
+                Busca livre
+              </Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Nome, descrição, ingredientes..."
+                  className="pl-9 bg-background"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 justify-between md:justify-end">
+            <span className="text-xs text-muted-foreground font-medium">
+              {filteredProducts.length} de {products.length} produtos
+            </span>
+            <Button onClick={() => setEditing(newProduct())} disabled={!categories.length}>
+              <Plus className="mr-1 h-4 w-4" /> Novo produto
+            </Button>
+          </div>
+        </div>
+
+        {/* Indicador quando o usuário digita menos de 4 caracteres */}
+        {searchTerm.trim().length > 0 && searchTerm.trim().length < 4 && (
+          <p className="text-xs text-amber-600 font-medium">
+            💡 Digite mais {4 - searchTerm.trim().length} caractere(s) para ativar a busca por texto.
+          </p>
+        )}
       </div>
+
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-        {products.map((p) => {
+        {filteredProducts.map((p) => {
           const cat = categories.find((c) => c.id === p.category_id);
           return (
             <div
@@ -384,13 +500,13 @@ function ProductsTab({
                   </div>
                 )}
               </div>
-              <div className="flex flex-1 flex-col gap-1">
+              <div className="flex flex-1 flex-col gap-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-medium leading-tight">{p.name_pt}</p>
-                    <p className="text-xs text-muted-foreground">{cat?.name_pt ?? "—"}</p>
+                  <div className="min-w-0">
+                    <p className="font-medium leading-tight truncate">{p.name_pt || (p as any).name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{cat?.name_pt || (cat as any)?.name || "—"}</p>
                   </div>
-                  <span className="text-sm font-semibold text-primary">
+                  <span className="text-sm font-semibold text-primary shrink-0">
                     {p.price != null ? `R$ ${Number(p.price).toFixed(2)}` : "—"}
                   </span>
                 </div>
@@ -416,6 +532,14 @@ function ProductsTab({
           );
         })}
       </div>
+
+      {filteredProducts.length === 0 && (
+        <div className="py-12 text-center text-stone-500 rounded-xl border border-dashed border-stone-300 bg-white">
+          <p className="font-medium">Nenhum produto encontrado.</p>
+          <p className="text-xs text-muted-foreground mt-1">Tente ajustar a categoria, o marcador ou o termo digitado.</p>
+        </div>
+      )}
+
       {editing && (
         <ProductDialog
           product={editing}

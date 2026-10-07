@@ -133,8 +133,8 @@ export function t(lang: Lang, key: keyof (typeof dict)["pt"]): string {
   return dict[lang][key];
 }
 
-export function pickName(p: { name_pt: string; name_en: string; name_es: string }, lang: Lang) {
-  return lang === "en" ? p.name_en : lang === "es" ? p.name_es : p.name_pt;
+export function pickName(p: { name_pt?: string; name_en?: string; name_es?: string; name?: string }, lang: Lang) {
+  return (lang === "en" ? p.name_en : lang === "es" ? p.name_es : p.name_pt) || p.name || p.name_pt || "";
 }
 export function pickDesc(
   p: { description_pt: string | null; description_en: string | null; description_es: string | null },

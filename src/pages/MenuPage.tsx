@@ -339,10 +339,11 @@ function toMin(t: string | null) {
 }
 
 function isAvailable(p: any, now: Date) {
-  const days: number[] = p.available_days ?? [];
+  const days: number[] = p.available_days ?? p.availability_days ?? [];
   if (days.length && !days.includes(now.getDay())) return false;
+  if (p.all_day) return true;
   const ranges: Array<[number, number]> = [];
-  const s1 = toMin(p.time_start_1), e1 = toMin(p.time_end_1);
+  const s1 = toMin(p.time_start_1 || p.time_start), e1 = toMin(p.time_end_1 || p.time_end);
   const s2 = toMin(p.time_start_2), e2 = toMin(p.time_end_2);
   if (s1 != null && e1 != null) ranges.push([s1, e1]);
   if (s2 != null && e2 != null) ranges.push([s2, e2]);
