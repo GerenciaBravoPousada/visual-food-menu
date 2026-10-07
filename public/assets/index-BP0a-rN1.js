@@ -1462,8 +1462,11 @@ async function generateMenuPdf(comp){
       hours=String(now.getHours()).padStart(2,'0'),
       mins=String(now.getMinutes()).padStart(2,'0'),
       dateStr=`${day}/${month}/${year} às ${hours}:${mins}`,
-      cats=(typeof Cc==='function'?Cc(comp.categories||[]):(comp.categories||[])).filter(c=>c.active!==!1),
-      allProds=(comp.products||[]).filter(p=>p.active!==!1);
+      // Filter ONLY strictly active categories
+      cats=(typeof Cc==='function'?Cc(comp.categories||[]):(comp.categories||[])).filter(c=>c&&c.active!==!1&&c.active!==0&&c.active!=='false'&&c.active!==null),
+      activeCatIds=new Set(cats.map(c=>c.id)),
+      // Filter ONLY strictly active products
+      allProds=(comp.products||[]).filter(p=>p&&p.active!==!1&&p.active!==0&&p.active!=='false'&&p.active!==null);
 
   if(!allProds.length){
     alert('Não há produtos ativos para gerar o cardápio em PDF.');
@@ -1482,10 +1485,40 @@ async function generateMenuPdf(comp){
     if(el)el.remove();
   }
 
-  // Helper to fetch and convert image to base64 Data URL
+  // Helper to fetch and convert image to base64 Data URL (including HEIC support)
   async function fetchImageDataUrl(url){
     if(!url)return null;
     if(url.startsWith('data:'))return url;
+
+    // Check for HEIC format and decode if needed
+    if(/\.heic$/i.test(url)||/\.heif$/i.test(url)){
+      try {
+        if(!window.heic2any){
+          await new Promise((resolve,reject)=>{
+            let s=document.createElement('script');
+            s.src='https://cdnjs.cloudflare.com/ajax/libs/heic2any/0.0.4/heic2any.min.js';
+            s.onload=resolve;
+            s.onerror=reject;
+            document.head.appendChild(s);
+          });
+        }
+        let res=await fetch(url);
+        if(res.ok){
+          let blob=await res.blob();
+          let convertedBlob=await window.heic2any({blob,toType:'image/jpeg',quality:0.85});
+          let finalBlob=Array.isArray(convertedBlob)?convertedBlob[0]:convertedBlob;
+          return await new Promise((resolve)=>{
+            let reader=new FileReader();
+            reader.onloadend=()=>resolve(reader.result);
+            reader.onerror=()=>resolve(null);
+            reader.readAsDataURL(finalBlob);
+          });
+        }
+      } catch(err){
+        console.warn('HEIC decode failed:', err);
+      }
+    }
+
     try {
       let res=await fetch(url,{mode:'cors'});
       if(res.ok){
@@ -1498,6 +1531,7 @@ async function generateMenuPdf(comp){
         });
       }
     } catch(e){}
+
     try {
       return await new Promise((resolve)=>{
         let img=new Image();
@@ -1534,7 +1568,7 @@ async function generateMenuPdf(comp){
       });
     }
 
-    // Group active products by active categories
+    // Group active products by active categories ONLY
     let grouped=[];
     for(let c of cats){
       let prods=allProds.filter(p=>p.categoryId===c.id);
@@ -1542,13 +1576,14 @@ async function generateMenuPdf(comp){
         grouped.push({category:c.name,products:prods});
       }
     }
-    let categorizedIds=new Set(cats.map(c=>c.id));
-    let uncatProds=allProds.filter(p=>!p.categoryId||!categorizedIds.has(p.categoryId));
+
+    // Only include products with NO category at all in "Outros" (do NOT include products from inactive categories)
+    let uncatProds=allProds.filter(p=>!p.categoryId);
     if(uncatProds.length>0){
       grouped.push({category:'Outros',products:uncatProds});
     }
 
-    // Pre-fetch images in parallel with concurrency limit
+    // Pre-fetch images in parallel
     for(let group of grouped){
       for(let prod of group.products){
         let imgSrc=prod.image||prod.images?.[0]||'';
@@ -1566,7 +1601,7 @@ async function generateMenuPdf(comp){
     const pageWidth = 210;
     const pageHeight = 297;
     const margin = 8;
-    const maxContentY = pageHeight - 14;
+    const maxContentY = pageHeight - 18; // Leave 18mm at bottom so content never collides with footer
     let currentY = margin;
 
     // Header
@@ -1684,7 +1719,7 @@ async function generateMenuPdf(comp){
       }
     }
 
-    // Footers on all pages
+    // Footers on all pages (raised to pageHeight - 11 so it is safely inside printer margins)
     const totalPages = doc.internal.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
@@ -1694,7 +1729,7 @@ async function generateMenuPdf(comp){
       let pNum = String(i).padStart(2, '0');
       let tNum = String(totalPages).padStart(2, '0');
       let footerText = `${pNum} de ${tNum} • Gerado em ${dateStr}`;
-      doc.text(footerText, pageWidth / 2, pageHeight - 5, { align: 'center' });
+      doc.text(footerText, pageWidth / 2, pageHeight - 11, { align: 'center' });
     }
 
     let cleanName = (comp.name || 'Cardapio').replace(/[^a-zA-Z0-9_-]/g, '_');
